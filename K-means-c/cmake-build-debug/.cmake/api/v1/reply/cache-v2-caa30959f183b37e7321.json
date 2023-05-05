@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c/cmake-build-debug"
+			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -515,7 +515,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c"
+			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c"
 		},
 		{
 			"name" : "CMAKE_INSTALL_NAME_TOOL",
@@ -1087,7 +1087,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c/cmake-build-debug"
+			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c/cmake-build-debug"
 		},
 		{
 			"name" : "K_means_c_IS_TOP_LEVEL",
@@ -1111,7 +1111,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c"
+			"value" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c"
 		}
 	],
 	"kind" : "cache",

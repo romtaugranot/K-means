@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c/cmake-build-debug",
-		"source" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means-c"
+		"build" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c/cmake-build-debug",
+		"source" : "/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c"
 	},
 	"version" : 
 	{
