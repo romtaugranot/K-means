@@ -63,12 +63,14 @@ int main(int argc, char *argv[]) {
         iter = argc == 3 ? atoi(argv[2]) : 200;
 
         /* Execute K-means algorithm */
-        /* centroids = k_means(vectors); */
+        struct vector *centroids = k_means(vectors);
 
         printf("K: %d, iter: %d, N: %d, d: %d\n", K, iter, N, d);
+        /*
         printf("%f, ", vectors->entries->value);
         printf("%f, ", vectors->entries->next->value);
         printf("%f\n", vectors->entries->next->next->value);
+         */
 
         return 0;
     }
@@ -309,7 +311,7 @@ int arg_min_dist(struct vector data_point, struct vector *centroids){
  */
 struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector *centroids) {
     struct vector **clusters = malloc(K * sizeof(struct vector*));
-    struct vector *last_nodes = malloc(K * sizeof(struct vector));
+    struct vector **last_nodes = malloc(K * sizeof(struct vector*));
     int i = 0;
 
     for (; i < K; i++)
@@ -320,13 +322,14 @@ struct vector** assign_data_points_to_clusters(struct vector *data_points, struc
     for (; i < N; i++) {
         int min_index = arg_min_dist(data_points[i], centroids);
 
-        if (clusters[min_index] == NULL)
-            clusters[min_index] = &data_points[i];
-        else
-            last_nodes[min_index].next = &data_points[i];
+        if (clusters[min_index] == NULL) {
+            clusters[min_index] = malloc(sizeof(struct vector));
+            *clusters[min_index] = data_points[i];
+        } else
+            last_nodes[min_index]->next = &data_points[i];
 
-        last_nodes[min_index] = data_points[i];
-        data_points[i].next = NULL;
+        last_nodes[min_index] = &data_points[i];
+        last_nodes[min_index]->next = NULL;
     }
 
     free(last_nodes);
@@ -361,8 +364,8 @@ struct vector* k_means(struct vector *data_points) {
     struct vector *new_centroids;
     
     /* Initialize centroids as first k vectors */
-    struct vector *centroids = malloc(N);
-    for (; i < N; i++)
+    struct vector *centroids = malloc(K * sizeof(struct vector));
+    for (; i < K; i++)
         centroids[i] = data_points[i];
 
     /* Repeat until convergence of centroids or until iteration_number == iter */
