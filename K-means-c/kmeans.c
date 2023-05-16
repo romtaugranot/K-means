@@ -41,6 +41,7 @@ int count_vectors_in_cluster(struct vector *cluster);
 int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids);
 int arg_min_dist(struct vector data_point, struct vector *centroids);
 struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector * centroids);
+struct entry* copy_entries(struct entry* original_entries);
 struct vector* k_means(struct vector *vectors);
 
 /* Code */
@@ -427,6 +428,29 @@ struct vector* update_centroids(struct vector *centroids, struct vector **cluste
     return centroids;
 }
 
+struct entry* copy_entries(struct entry* original_entries) {
+    struct entry* new_entries = NULL;
+    struct entry* current = original_entries;
+    struct entry* prev = NULL;
+
+    while (current != NULL) {
+        struct entry* new_entry = malloc(sizeof(struct entry));
+        new_entry->value = current->value;
+        new_entry->next = NULL;
+
+        if (prev != NULL) {
+            prev->next = new_entry;
+        } else {
+            new_entries = new_entry;
+        }
+
+        prev = new_entry;
+        current = current->next;
+    }
+
+    return new_entries;
+}
+
 struct vector* k_means(struct vector *vectors) {
     int i = 0;
     int iteration_number = 0;
@@ -437,8 +461,13 @@ struct vector* k_means(struct vector *vectors) {
     /* Initialize centroids as first k vectors */
     printf("Initializing centroids as first k vectors...\n");
     struct vector *centroids = malloc(K * sizeof(struct vector));
-    for (; i < K; i++)
-        centroids[i] = vectors[i];
+    struct vector *curr_vec = vectors;
+    struct vector *curr_cent = centroids;
+    for (; i < K; i++) {
+        curr_cent->entries = copy_entries(curr_vec->entries);
+        curr_vec = curr_vec->next;
+        curr_cent = (i + 1) < K ? &centroids[i + 1]: NULL;
+    }
 
     print_vectors(vectors);
     print_centroids(centroids);
