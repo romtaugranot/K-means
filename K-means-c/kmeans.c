@@ -1,7 +1,3 @@
-/*
- * Created by Yoav Shkedy on 03/05/2023.
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -10,8 +6,8 @@
 
 static int N = 0;
 static int d = 1; /* Dimension is at least 1. */
-static int K = 3;
-static int iter = 100;
+static int K = 0;
+static int iter = 200;
 static double eps = 0.001;
 
 /* Structs definitions */
@@ -26,94 +22,71 @@ struct vector {
 };
 
 /* Functions declarations */
-struct vector* read_data_points(const char* filename);
-int check_argument(int smallest, char arg[], int largest);
-int is_number(char number[]);
+int main(int argc, char *argv[]);
+struct vector* read_data_points();
 void print_vectors(struct vector *vectors);
 void print_centroids(struct vector *centroids);
+int check_argument(int smallest, char arg[], int largest);
+int is_number(char number[]);
 
-double dist(struct vector u, struct vector v);
-struct vector* sum_vectors(struct vector u, struct vector v);
-struct vector* sum_vectors_in_cluster(struct vector *centroid, struct vector *cluster);
+struct vector* k_means(struct vector *vectors);
+struct vector* copy_first_K_vectors(struct vector* vectors);
+struct entry* copy_entries(struct entry* original_entries);
+struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector * centroids);
+int arg_min_dist(struct vector data_point, struct vector *centroids);
+struct vector* get_new_centroids(struct vector **clusters);
+int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids);
+
+struct vector* sum_entries(struct entry *u, struct entry *v);
+struct vector* sum_vectors_in_cluster(struct vector *cluster);
 struct vector* divide_by_scalar(struct vector v, double scalar);
 int count_vectors_in_cluster(struct vector *cluster);
-
-int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids);
-int arg_min_dist(struct vector data_point, struct vector *centroids);
-struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector * centroids);
-struct entry* copy_entries(struct entry* original_entries);
-struct vector* k_means(struct vector *vectors);
+double dist(struct vector u, struct vector v);
 
 /* Code */
-//int main(int argc, char *argv[]) {
-int main() {
+int main(int argc, char *argv[]) {
     struct vector *vectors;
-    int flag_K, flag_iter;
+    int flag_K = 0, flag_iter = 1;
+    struct vector *centroids;
 
-    /* Read vectors from file */
-    vectors = read_data_points("/Users/dell/Yoav/CSDegreeProjects/SoftwareProject/HW1/K-means/K-means-c/input_1.txt");
-
-    struct vector* curr_vec = vectors;
-
-    struct vector *centroids = k_means(vectors);
-
-    for (int i = 0; i < K; i++) {
-        printf("Centroid %d: ", i);
-        struct entry* entry = centroids[i].entries;
-        while (entry != NULL) {
-            printf("%f ", entry->value);
-            entry = entry->next;
-        }
-        printf("\n");
-    }
+    vectors = read_data_points();
 
     /* Check validity of arguments */
-//    flag_K = check_argument(1, argv[1], N);
+    flag_K = check_argument(1, argv[1], N);
 
-//    if (argc == 3)
-//        flag_iter = check_argument(1, argv[2], 1000);
+    if (argc == 3)
+        flag_iter = check_argument(1, argv[2], 1000);
 
     /* Execute algorithm only if arguments are valid */
-//    if (flag_K == 1 && flag_iter == 1) {
-//
-//        /* Get K and iter */
-//        K = atoi(argv[1]);
-//        iter = argc == 3 ? atoi(argv[2]) : 200;
-//
-//        /* Execute K-means algorithm */
-//        struct vector *centroids = k_means(vectors);
-//
-//        printf("K: %d, iter: %d, N: %d, d: %d\n", K, iter, N, d);
-//        /*
-//        printf("%f, ", vectors->entries->value);
-//        printf("%f, ", vectors->entries->next->value);
-//        printf("%f\n", vectors->entries->next->next->value);
-//         */
-//
-//        return 0;
-//    }
+    if (flag_K == 1 && flag_iter == 1) {
 
+        /* Get K and iter */
+        K = atoi(argv[1]);
+        iter = argc == 3 ? atoi(argv[2]) : 200;
+
+        printf("K: %d, iter: %d, N: %d, d: %d\n\n", K, iter, N, d);
+
+        /* Execute K-means algorithm */
+        printf("here\n");
+        centroids = k_means(vectors);
+        printf("here2\n");
+        print_centroids(centroids);
+        
+        return 0;
+    }
     /* Otherwise raise error messages */
-//    else {
-//
-//        if (flag_K == 0)
-//            printf("Invalid number of clusters!");
-//
-//        if (flag_iter == 0)
-//            printf("Invalid maximum iteration!");
-//
-//        return 1;
-//    }
+    else {
+        if (flag_K == 0)
+            printf("Invalid number of clusters!");
+        if (flag_iter == 0)
+            printf("Invalid maximum iteration!");
+        return 1;
+    }
 }
 
 /** Argument reading and processing **/
 
-struct vector* read_data_points(const char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        printf("Failed to open file: %s\n", filename);
-        return NULL;
-    }
+struct vector* read_data_points(){
 
     struct vector *head_vec, *curr_vec;
     struct entry *head_entry, *curr_entry;
@@ -128,10 +101,11 @@ struct vector* read_data_points(const char* filename) {
     curr_vec = head_vec;
     curr_vec->next = NULL;
 
-    while (fscanf(file, "%lf%c", &n, &c) == 2) {
+    while (scanf("%lf%c", &n, &c) == 2) {
 
         /* We have read all the entries for the current vector */
         if (c == '\n') {
+            
             curr_entry->value = n;
             curr_vec->entries = head_entry;
             curr_vec->next = malloc(sizeof(struct vector));
@@ -160,8 +134,37 @@ struct vector* read_data_points(const char* filename) {
     free(curr_vec->next);
     free(head_entry);
 
-    fclose(file);
     return head_vec;
+}
+
+void print_vectors(struct vector *vectors) {
+    struct vector* curr_vec = vectors;
+
+    while (curr_vec != NULL) {
+        struct entry* entry = curr_vec->entries;
+        while (entry != NULL) {
+            printf("%f ", entry->value);
+            entry = entry->next;
+        }
+        printf("\n");
+        fflush(stdout); 
+        curr_vec = curr_vec->next;
+    }
+}
+
+void print_centroids(struct vector *centroids) {
+    struct entry* entry;
+    int i = 0;
+    for (; i < K; i++) {
+        printf("Centroid %d: ", i);
+        entry = centroids[i].entries;
+        while (entry != NULL) {
+            printf("%f ", entry->value);
+            entry = entry->next;
+        }
+        printf("\n");
+        fflush(stdout); 
+    }
 }
 
 /* Returns 1 if and only if all requirements of the argument are met. */
@@ -195,234 +198,51 @@ int is_number(char number[]) {
     return 1;
 }
 
-void print_vectors(struct vector *vectors) {
-    struct vector* curr_vec = vectors;
+/*  input: Linked list of vectors.
+    output: array of vectors */
+struct vector* k_means(struct vector *vectors) {
+    int iteration_number = 0;
+    int flag_delta = 0;
+    struct vector **clusters;
+    struct vector *new_centroids, *centroids;
 
-    while (curr_vec != NULL) {
-        struct entry* entry = curr_vec->entries;
-        while (entry != NULL) {
-            printf("%f ", entry->value);
-            entry = entry->next;
-        }
-        printf("\n");
-        fflush(stdout); // Flush the output buffer
-        curr_vec = curr_vec->next;
+    /* Initialize centroids as first K vectors */
+    centroids = copy_first_K_vectors(vectors);
+
+    /* Repeat until convergence of centroids or until iteration_number == iter */
+    while ((flag_delta == 0) && (iteration_number < iter)) {
+        iteration_number++;
+
+        /* Assign every x_i to the closest cluster */
+        clusters = assign_data_points_to_clusters(vectors, centroids);
+
+        /* Get new centroids */
+        new_centroids = get_new_centroids(clusters);
+
+        /* Check convergence of centroids */
+        flag_delta = compute_flag_delta(centroids, new_centroids);
+
+        /* Update centroids */
+        centroids = new_centroids;
     }
+
+    return centroids;
 }
 
-void print_centroids(struct vector *centroids) {
-    for (int i = 0; i < K; i++) {
-        printf("Centroid %d: ", i);
-        struct entry* entry = centroids[i].entries;
-        while (entry != NULL) {
-            printf("%f ", entry->value);
-            entry = entry->next;
-        }
-        printf("\n");
-        fflush(stdout); // Flush the output buffer
-    }
-}
-
-/** Math functions **/
-
-double dist(struct vector u, struct vector v) {
+struct vector* copy_first_K_vectors(struct vector* vectors){
+    struct vector *centroids;
+    struct vector *curr_vec;
+    struct vector *curr_cent;
     int i = 0;
 
-    struct entry *u_entry = u.entries;
-    struct entry *v_entry = v.entries;
-    double sum = 0;
-
-    for(; i < d; i++) {
-        sum += pow(u_entry->value - v_entry->value, 2);
-        u_entry = u_entry->next;
-        v_entry = v_entry->next;
-    }
-
-    return sqrt(sum);
-}
-
-struct vector* sum_vectors(struct vector u, struct vector v) {
-    int i = 0;
-
-    struct vector* result_vector = malloc(sizeof(struct vector));
-    result_vector->entries = malloc(d * sizeof(struct entry));
-
-    struct entry* u_entry = u.entries;
-    struct entry* v_entry = v.entries;
-    struct entry* result_entry = result_vector->entries;
-
-    for (; i < d; i++) {
-        result_entry->value = u_entry->value + v_entry->value;
-        u_entry = u_entry->next;
-        v_entry = v_entry->next;
-        result_entry = result_entry->next;
-    }
-
-    return result_vector;
-}
-
-struct vector* sum_vectors_in_cluster(struct vector *centroid, struct vector *cluster) {
-    if (cluster == NULL)
-        return centroid;
-
-    struct vector *curr_vector = cluster;
-    struct vector *next_vector = curr_vector->next;
-    struct vector *result_vector;
-
-    if (next_vector == NULL)
-        return curr_vector;
-    else {
-
-        while (next_vector != NULL) {
-             result_vector = sum_vectors(*curr_vector, *next_vector);
-             curr_vector = result_vector;
-             next_vector = next_vector->next;
-        }
-
-    }
-    return result_vector;
-}
-
-struct vector* divide_by_scalar(struct vector v, double scalar) {
-    int i = 0;
-
-    struct vector* result_vector = malloc(sizeof(struct vector));
-    result_vector->entries = malloc(d * sizeof(struct entry));
-
-    struct entry* v_entry = v.entries;
-    struct entry* result_entry = result_vector->entries;
-
-    for (; i < d; i++) {
-        result_entry->value = v_entry->value / scalar;
-        v_entry = v_entry->next;
-        result_entry = result_entry->next;
-    }
-
-    return result_vector;
-}
-
-int count_vectors_in_cluster(struct vector *cluster) {
-    struct vector *curr_vector = cluster;
-    int cnt = 0;
-
-    while (curr_vector != NULL) {
-        cnt++;
-        curr_vector = curr_vector->next;
-    }
-
-    return cnt;
-}
-
-/** K-means algorithm **/
-
-
-/*
- * pre-condition: length of old_centroids == length of new_centroids.
- * returns: 1 if and only if each delta is strictly less than eps.
-*/
-int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids) {
-    int flag_delta = 1;
-    int delta = 0;
-    int i = 0;
-
-    for(; i < K; i++){
-        delta = dist(old_centroids[i], new_centroids[i]);
-
-        if (delta >= eps){
-            flag_delta = 0;
-            break;
-        }
-
-    }
-
-    return flag_delta;
-}
-
-int arg_min_dist(struct vector data_point, struct vector *centroids) {
-    printf("\narg_min_dist():\n");
-    double min_dis = DBL_MAX;
-    int min_index = -1;
-    int i = 0;
-    double distance;
-
-    for(; i < K; i++) {
-        printf("\nCalculating dist from centroid %d:", i);;
-        fflush(stdout);
-        printf("\nAccessing centroid[%d]:", i);
-        fflush(stdout);
-        distance = dist(data_point, centroids[i]);
-        printf("Successfully accessed\n");
-        printf("%f.\n", distance);
-        if (distance < min_dis) {
-            min_dis = distance;
-            min_index = i;
-        }
-        printf("min_dis = %f\n", min_dis);
-        printf("min index = %d\n", min_index);
-    }
-
-    return min_index;
-}
-
-/* 
- * Returns an array of pointers of length K.
- * Each pointer in the array represents a centroid and points to a linked list of data points assigned to that centroid.
- * clusters[i] means that the cluster at index i is the closest cluster to all data points in the linked list.
- */
-struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector *centroids) {
-    printf("\nassign_data_points_to_clusters():\n");
-    struct vector **clusters = malloc(K * sizeof(struct vector*));
-    struct vector **last_nodes = malloc(K * sizeof(struct vector*));
-    int i = 0;
-
+    centroids = malloc(K * sizeof(struct vector));
+    curr_vec = vectors;
+    curr_cent = centroids;
     for (; i < K; i++) {
-        clusters[i] = NULL;
-        last_nodes[i] = NULL;
-    }
-
-    i = 0;
-
-    for (; i < N; i++) {
-        printf("i = %d:\n", i);
-        int min_index = arg_min_dist(data_points[i], centroids);
-        printf("After arg_min_dist()");
-
-        if (clusters[min_index] == NULL) {
-            printf("\tCreates a new cluster for centroid %d\n", min_index);
-            clusters[min_index] = malloc(sizeof(struct vector));
-            *clusters[min_index] = data_points[i];
-        } else {
-            printf("\tAppending the vector to the existing cluster %d\n", min_index);
-            last_nodes[min_index]->next = &data_points[i];
-        }
-
-        printf("Updating last_nodes[min_index]");
-        last_nodes[min_index] = &data_points[i];
-        last_nodes[min_index]->next = NULL;
-    }
-
-    free(last_nodes);
-
-    return clusters;
-}
-
-/*
- * Returns an array of length K which contains updated centroids.
-*/
-struct vector* update_centroids(struct vector *centroids, struct vector **clusters) {
-    int i = 0;
-
-    /* For each centroid */
-    for (; i < K; ++i) {
-        /* Sum the vectors in its cluster */
-        struct vector *sum_vector = sum_vectors_in_cluster(&centroids[i], clusters[i]);
-
-        /* Divide by the number of vectors in the cluster */
-        int k = count_vectors_in_cluster(clusters[i]);
-        centroids[i] = *divide_by_scalar(*sum_vector, k);
-
-        free(sum_vector->entries);
-        free(sum_vector);
+        curr_cent = &centroids[i];
+        curr_cent->entries = copy_entries(curr_vec->entries);
+        curr_cent->next = NULL;
+        curr_vec = curr_vec->next;
     }
 
     return centroids;
@@ -451,54 +271,219 @@ struct entry* copy_entries(struct entry* original_entries) {
     return new_entries;
 }
 
-struct vector* k_means(struct vector *vectors) {
-    int i = 0;
-    int iteration_number = 0;
-    int flag_delta = 0;
+/* 
+ * Returns an array of pointers of length K.
+ * Each pointer in the array represents a centroid and points to a linked list of data points assigned to that centroid.
+ * clusters[i] means that the cluster at index i has centroid indexed i as its closest centroid.
+ */
+struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector *centroids) {
     struct vector **clusters;
-    struct vector *new_centroids;
+    struct vector *curr_data_point = data_points; /* used to iterate over the data points. */
+    struct vector *data_point; /* used to make a copy of a data point. */
+    int i = 0;
+    int min_index = -1;
 
-    /* Initialize centroids as first k vectors */
-    printf("Initializing centroids as first k vectors...\n");
-    struct vector *centroids = malloc(K * sizeof(struct vector));
-    struct vector *curr_vec = vectors;
-    struct vector *curr_cent = centroids;
+    clusters = malloc(K * sizeof(struct vector*));
+
     for (; i < K; i++) {
-        curr_cent->entries = copy_entries(curr_vec->entries);
-        curr_vec = curr_vec->next;
-        curr_cent = (i + 1) < K ? &centroids[i + 1]: NULL;
+        clusters[i] = NULL;
     }
 
-    print_vectors(vectors);
-    print_centroids(centroids);
+    i = 0;
+    for (; i < N; i++) {
+        data_point = malloc(sizeof(struct vector));
+        data_point->entries = copy_entries(curr_data_point->entries);
+        data_point->next = NULL;
+                
+        min_index = arg_min_dist(*data_point, centroids);
 
-    /* Repeat until convergence of centroids or until iteration_number == iter */
-    printf("Getting into the loop...\n");
-    while ((flag_delta == 0) && (iteration_number < iter)) {
-        iteration_number++;
-
-        /* Assign every x_i to the closest cluster */
-        printf("Assigning every x_i to the closest cluster...\n");
-        clusters = assign_data_points_to_clusters(vectors, centroids);
-
-        /* Update centroids */
-        printf("Updating centroids...\n");
-        new_centroids = update_centroids(centroids, clusters);
-
-        /* Free memory occupied by the previous centroids */
-        free(centroids);
-
-        /* Free memory occupied by the previous clusters */
-        for (i = 0; i < K; i++)
-            free(clusters[i]);
-        free(clusters);
-
-        /* Check convergence of centroids */
-        printf("Checking convergence of centroids...\n");
-        flag_delta = compute_flag_delta(centroids, new_centroids);
-
-        centroids = new_centroids;
+        if (clusters[min_index] == NULL) {
+            clusters[min_index] = malloc(sizeof(struct vector));
+        } else {
+            data_point->next = clusters[min_index];
+        }
+        clusters[min_index] = data_point;
+        curr_data_point = curr_data_point->next;
     }
 
-    return centroids;
+    return clusters;
+}
+
+int arg_min_dist(struct vector data_point, struct vector *centroids) {
+    double min_dis = DBL_MAX;
+    int min_index = -1;
+    int i = 0;
+    double distance;
+
+    for(; i < K; i++) {
+        distance = dist(data_point, centroids[i]);
+        if (distance < min_dis) {
+            min_dis = distance;
+            min_index = i;
+        }
+    }
+
+    return min_index;
+}
+
+/*
+ * Returns a new array of length K which contains updated centroids.
+*/
+struct vector* get_new_centroids(struct vector **clusters) {
+    struct vector *new_centroids = malloc(K * sizeof(struct vector));
+    int i = 0, k = -1;
+    struct vector *sum_vector;
+
+    i = 0;
+
+    /* For each centroid */
+    for (; i < K; ++i) {
+        
+        /* Sum the vectors in its cluster. */
+        sum_vector = sum_vectors_in_cluster(clusters[i]);
+
+        /* Count number of vectors in cluster. */
+        k = count_vectors_in_cluster(clusters[i]);
+
+        /* Divide by the number of vectors in the cluster. */
+        new_centroids[i] = *divide_by_scalar(*sum_vector, k);
+
+        free(sum_vector->entries);
+        free(sum_vector);
+    }
+
+    return new_centroids;
+}
+
+struct vector* sum_entries(struct entry *u, struct entry *v) {
+    struct vector* sum_vector = malloc(sizeof(struct vector));
+    struct entry* new_entries = NULL;
+    struct entry* curr1 = u;
+    struct entry* curr2 = v;
+    struct entry* prev = NULL;
+
+    while (curr1 != NULL && curr2 != NULL) {
+        struct entry* new_entry = malloc(sizeof(struct entry));
+        new_entry->value = curr1->value + curr2->value;
+        new_entry->next = NULL;
+
+        if (prev != NULL) {
+            prev->next = new_entry;
+        } else {
+            new_entries = new_entry;
+        }
+
+        prev = new_entry;
+        curr1 = curr1->next;
+        curr2 = curr2->next;
+    }
+
+    sum_vector->entries = new_entries;
+    sum_vector->next = NULL;
+    return sum_vector;
+}
+
+struct vector* sum_vectors_in_cluster(struct vector *cluster) {
+    struct vector *curr_vector = cluster;
+    struct vector *result_vector;
+    struct vector *prev_result;
+    struct vector *next_vector;
+
+    next_vector = curr_vector->next;
+
+    if (next_vector == NULL){
+        curr_vector = malloc(sizeof(struct vector));
+        curr_vector->entries = copy_entries(cluster->entries);
+        curr_vector->next = NULL;
+        return curr_vector;
+    }
+    else {
+        
+        while (next_vector != NULL) { /* There's something wrong with this code trying to work
+        only with result_vector. prev_result fixes the issue. If there's time, addresss the issue. */
+            prev_result = result_vector;
+            result_vector = sum_entries(curr_vector->entries, next_vector->entries);
+            curr_vector = result_vector;
+            next_vector = next_vector->next;
+        }
+
+    }
+
+    return prev_result;
+}
+
+struct vector* divide_by_scalar(struct vector v, double scalar) {
+    struct vector* result_vector = malloc(sizeof(struct vector));
+    struct entry* new_entries = NULL;
+    struct entry* curr = v.entries;
+    struct entry* prev = NULL;
+
+    while (curr != NULL) {
+        struct entry* new_entry = malloc(sizeof(struct entry));
+        new_entry->value = curr->value / scalar;
+        new_entry->next = NULL;
+
+        if (prev != NULL) {
+            prev->next = new_entry;
+        } else {
+            new_entries = new_entry;
+        }
+
+        prev = new_entry;
+        curr = curr->next;
+    }
+
+    result_vector->entries = new_entries;
+    result_vector->next = NULL;
+    return result_vector;
+}
+
+int count_vectors_in_cluster(struct vector *cluster) {
+    struct vector *curr_vector = cluster;
+    int cnt = 0;
+
+    while (curr_vector != NULL) {
+        cnt++;
+        curr_vector = curr_vector->next;
+    }
+
+    return cnt-1;
+}
+
+/*
+ * pre-condition: length of old_centroids == length of new_centroids.
+ * returns: 1 if and only if each delta is strictly less than eps.
+*/
+int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids) {
+    int flag_delta = 1;
+    double delta = 0;
+    int i = 0;
+
+    for(; i < K; i++){
+        delta = dist(old_centroids[i], new_centroids[i]);
+        if (delta >= eps){
+            flag_delta = 0;
+            break;
+        }
+
+    }
+
+    return flag_delta;
+}
+
+
+double dist(struct vector u, struct vector v) {
+    int i = 0;
+
+    struct entry *u_entry = u.entries;
+    struct entry *v_entry = v.entries;
+    double sum = 0;
+
+    for(; i < d; i++) {
+        sum += pow(u_entry->value - v_entry->value, 2);
+        u_entry = u_entry->next;
+        v_entry = v_entry->next;
+    }
+
+    return sqrt(sum);
 }
