@@ -155,7 +155,7 @@ struct vector* read_data_points(){
             d++;
     }
 
-    free(curr_vec->next);
+    free(curr_vec);
     free(head_entry);
 
     return head_vec;
@@ -266,6 +266,7 @@ struct vector* copy_first_K_vectors(struct vector* vectors){
         printf("Failed to allocate memory\n");
         exit(1);
     }
+
     curr_vec = vectors;
     for (; i < K; i++) {
         curr_cent = &centroids[i];
@@ -442,6 +443,7 @@ struct vector* sum_entries(struct entry *u, struct entry *v) {
 
     sum_vector->entries = new_entries;
     sum_vector->next = NULL;
+
     return sum_vector;
 }
 
