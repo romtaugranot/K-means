@@ -457,8 +457,7 @@ struct vector* sum_vectors_in_cluster(struct vector *cluster) {
 
     else {
 
-        while (next_vector != NULL) { /* There's something wrong with this code trying to work
-        only with result_vector. prev_result fixes the issue. If there's time, address the issue. */
+        while (next_vector != NULL) {
             result_vector = sum_entries(curr_vector->entries, next_vector->entries);
             curr_vector = result_vector;
             next_vector = next_vector->next;
@@ -552,9 +551,4 @@ double dist(struct vector u, struct vector v) {
     }
 
     return sqrt(sum);
-}
-
-double round_4_dec(double value) {
-    double scale = pow(10.0, 4);
-    return round(value * scale) / scale;
 }
