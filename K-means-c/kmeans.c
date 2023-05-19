@@ -36,7 +36,7 @@ int is_number(char number[]);
 struct vector* k_means(struct vector *vectors);
 struct vector* copy_first_K_vectors(struct vector* vectors);
 struct entry* copy_entries(struct entry* original_entries);
-struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector * centroids);
+struct vector** assign_data_points_to_clusters(struct vector *data_points, struct vector *centroids);
 int arg_min_dist(struct vector data_point, struct vector *centroids);
 struct vector* get_new_centroids(struct vector **clusters);
 int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids);
@@ -46,7 +46,9 @@ struct vector* sum_vectors_in_cluster(struct vector *cluster);
 struct vector* divide_by_scalar(struct vector v, double scalar);
 int count_vectors_in_cluster(struct vector *cluster);
 double dist(struct vector u, struct vector v);
-double round_4_dec(double value);
+void free_vectors(struct vector *head);
+void free_entries(struct entry *head);
+void free_clusters(struct vector **clusters);
 
 /* Code */
 int main(int argc, char *argv[]) {
@@ -74,9 +76,9 @@ int main(int argc, char *argv[]) {
         /* Execute K-means algorithm */
         centroids = k_means(vectors);
         print_centroids(centroids);
-        free(centroids->entries);
-        free(centroids);
-        free(vectors);
+
+        free_vectors(centroids);
+//        free_vectors(vectors);
 
         return 0;
     }
@@ -242,8 +244,16 @@ struct vector* k_means(struct vector *vectors) {
     while ((flag_delta == 0) && (iteration_number < iter)) {
         iteration_number++;
 
+        /* Free previous clusters */
+        if (iteration_number > 1)
+            free_clusters(clusters);
+
         /* Assign every x_i to the closest cluster */
         clusters = assign_data_points_to_clusters(vectors, centroids);
+
+        /* Free previous centroids */
+        if (iteration_number > 1)
+            free_vectors(centroids);
 
         /* Get new centroids */
         new_centroids = get_new_centroids(clusters);
@@ -568,4 +578,53 @@ double dist(struct vector u, struct vector v) {
     }
 
     return sqrt(sum);
+}
+
+void free_vectors(struct vector *head) {
+    struct vector *current_vector = head;
+    struct vector *next_vector;
+    struct entry *current_entry;
+    struct entry *next_entry;
+
+    if (head == NULL)
+        return;
+
+    while (current_vector != NULL) {
+        current_entry = current_vector->entries;
+
+        while (current_entry != NULL) {
+            next_entry = current_entry->next;
+            free(current_entry);
+            current_entry = next_entry;
+        }
+
+        next_vector = current_vector->next;
+        free(current_vector);
+        current_vector = next_vector;
+    }
+}
+
+void free_entries(struct entry *head) {
+    struct entry *current_entry = head;
+    struct entry *next_entry;
+
+    if (head == NULL)
+        return;
+
+    while (current_entry != NULL) {
+        next_entry = current_entry->next;
+        free(current_entry);
+        current_entry = next_entry;
+    }
+}
+
+void free_clusters(struct vector **clusters) {
+    int i = 0;
+
+    if (clusters == NULL)
+        return;
+
+    for(; i < K; i++) {
+        free_vectors(clusters[i]);
+    }
 }
