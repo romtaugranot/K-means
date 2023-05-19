@@ -74,6 +74,9 @@ int main(int argc, char *argv[]) {
         /* Execute K-means algorithm */
         centroids = k_means(vectors);
         print_centroids(centroids);
+        free(centroids->entries);
+        free(centroids);
+        free(vectors);
 
         return 0;
     }
@@ -341,6 +344,7 @@ struct vector** assign_data_points_to_clusters(struct vector *data_points, struc
             clusters[min_index] = malloc(sizeof(struct vector));
             if (clusters[min_index] == NULL) {   /* Memory allocation failed */
                 printf("Failed to allocate memory\n");
+                free(data_point);
                 exit(1);
             }
         }
