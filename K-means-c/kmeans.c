@@ -4,6 +4,10 @@
 #include <ctype.h>
 #include <float.h>
 
+/* To Compile:
+ * gcc -ansi -Wall -Wextra -Werror -pedantic-errors kmeans.c -o kmeans -lm
+ * */
+
 static int N = 0;
 static int d = 1; /* Dimension is at least 1. */
 static int K = 0;
@@ -373,12 +377,13 @@ int arg_min_dist(struct vector data_point, struct vector *centroids) {
 */
 struct vector* get_new_centroids(struct vector **clusters) {
     struct vector *new_centroids = malloc(K * sizeof(struct vector));
+    int i = 0, k = -1;
+    struct vector *sum_vector;
+
     if (new_centroids == NULL) {   /* Memory allocation failed */
         printf("Failed to allocate memory\n");
         exit(1);
     }
-    int i = 0, k = -1;
-    struct vector *sum_vector;
 
     i = 0;
 
@@ -403,22 +408,25 @@ struct vector* get_new_centroids(struct vector **clusters) {
 
 struct vector* sum_entries(struct entry *u, struct entry *v) {
     struct vector *sum_vector = malloc(sizeof(struct vector));
-    if (sum_vector == NULL) {   /* Memory allocation failed */
-        printf("Failed to allocate memory\n");
-        exit(1);
-    }
     struct entry* new_entries = NULL;
     struct entry* curr1 = u;
     struct entry* curr2 = v;
     struct entry* prev = NULL;
 
+    if (sum_vector == NULL) {   /* Memory allocation failed */
+        printf("Failed to allocate memory\n");
+        exit(1);
+    }
+
     while (curr1 != NULL && curr2 != NULL) {
         struct entry* new_entry = malloc(sizeof(struct entry));
+        double sum = curr1->value + curr2->value;
+
         if (new_entry == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
             exit(1);
         }
-        double sum = curr1->value + curr2->value;
+
         new_entry->value = sum;
         new_entry->next = NULL;
 
@@ -470,21 +478,24 @@ struct vector* sum_vectors_in_cluster(struct vector *cluster) {
 
 struct vector* divide_by_scalar(struct vector v, double scalar) {
     struct vector* result_vector = malloc(sizeof(struct vector));
-    if (result_vector == NULL) {   /* Memory allocation failed */
-        printf("Failed to allocate memory\n");
-        exit(1);
-    }
     struct entry* new_entries = NULL;
     struct entry* curr = v.entries;
     struct entry* prev = NULL;
 
+    if (result_vector == NULL) {   /* Memory allocation failed */
+        printf("Failed to allocate memory\n");
+        exit(1);
+    }
+
     while (curr != NULL) {
         struct entry* new_entry = malloc(sizeof(struct entry));
+        double res = curr->value / scalar;
+
         if (new_entry == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
             exit(1);
         }
-        double res = curr->value / scalar;
+
         new_entry->value = res;
         new_entry->next = NULL;
 
