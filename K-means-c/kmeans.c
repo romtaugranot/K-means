@@ -126,7 +126,7 @@ struct vector* read_data_points(){
 
             curr_entry->value = n;
             curr_vec->entries = head_entry;
-            curr_vec->next = malloc(sizeof(struct vector));
+            curr_vec->next = calloc(1, sizeof(struct vector));
             if (curr_vec == NULL) {   /* Memory allocation failed */
                 printf("Failed to allocate memory\n");
                 exit(1);
@@ -161,7 +161,6 @@ struct vector* read_data_points(){
             d++;
     }
 
-    free(curr_vec);
     free_entries(head_entry);
 
     return head_vec;
@@ -301,9 +300,10 @@ struct entry* copy_entries(struct entry* original_entries) {
     struct entry* new_entries = NULL;
     struct entry* current = original_entries;
     struct entry* prev = NULL;
+    struct entry *new_entry;
 
     while (current != NULL) {
-        struct entry *new_entry = malloc(sizeof(struct entry));
+        new_entry = malloc(sizeof(struct entry));
         if (new_entry == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
             exit(1);
@@ -318,6 +318,7 @@ struct entry* copy_entries(struct entry* original_entries) {
 
         prev = new_entry;
         current = current->next;
+
     }
 
     return new_entries;
@@ -422,10 +423,12 @@ struct vector sum_entries(struct entry *u, struct entry *v) {
     struct entry* curr1 = u;
     struct entry* curr2 = v;
     struct entry* prev = NULL;
+    struct entry *new_entry;
+    double sum = 0;
 
     while (curr1 != NULL && curr2 != NULL) {
-        struct entry *new_entry = malloc(sizeof(struct entry));
-        double sum = curr1->value + curr2->value;
+        new_entry = calloc(1, sizeof(struct entry));
+        sum = curr1->value + curr2->value;
 
         if (new_entry == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
@@ -455,6 +458,7 @@ struct vector sum_vectors_in_cluster(struct vector *cluster) {
     struct vector *curr_vector = cluster;
     struct vector result_vector;
     struct vector *next_vector;
+    int iter = 0;
 
     next_vector = curr_vector->next;
 
@@ -473,8 +477,12 @@ struct vector sum_vectors_in_cluster(struct vector *cluster) {
 
         while (next_vector != NULL) {
             result_vector = sum_entries(curr_vector->entries, next_vector->entries);
-            curr_vector = &result_vector;
+            if (iter > 0){
+                free_entries(curr_vector->entries);
+            }
+            curr_vector->entries = result_vector.entries;
             next_vector = next_vector->next;
+            iter++;
         }
 
     }
@@ -564,21 +572,10 @@ double dist(struct vector u, struct vector v) {
 }
 
 void free_vectors(struct vector *head) {
-    struct vector *current_vector = head;
-    struct vector *next_vector;
-    int cnt = 0;
-
-    if (head == NULL)
-        return;
-
-    while (current_vector != NULL) {
-        if (cnt > N)
-            return;
-        free_entries(current_vector->entries);
-        next_vector = current_vector->next;
-        free(current_vector);
-        current_vector = next_vector;
-        cnt++;
+    if (head != NULL){
+        free_entries(head->entries);
+        free_vectors(head->next);
+        free(head);
     }
 }
 
@@ -592,16 +589,9 @@ void free_centroids(struct vector *centroids) {
 }
 
 void free_entries(struct entry *head) {
-    struct entry *current_entry = head;
-    struct entry *next_entry;
-
-    if (head == NULL)
-        return;
-
-    while (current_entry != NULL) {
-        next_entry = current_entry->next;
-        free(current_entry);
-        current_entry = next_entry;
+    if (head != NULL){
+        free_entries(head->next);
+        free(head);
     }
 }
 
