@@ -27,7 +27,7 @@ struct vector {
 
 /* Functions declarations */
 int main(int argc, char *argv[]);
-struct vector* read_data_points();
+struct vector* read_data_points(void);
 void print_vectors(struct vector *vectors);
 void print_centroids(struct vector *centroids);
 int check_argument(int smallest, char arg[], int largest);
@@ -42,6 +42,7 @@ struct vector* get_new_centroids(struct vector **clusters);
 int compute_flag_delta(struct vector *old_centroids, struct vector *new_centroids);
 
 struct entry* sum_entries(struct entry *u, struct entry *v);
+struct vector* zero_vector(void);
 struct vector* sum_vectors_in_cluster(struct vector *cluster);
 struct vector divide_by_scalar(struct vector v, double scalar);
 int count_vectors_in_cluster(struct vector *cluster);
@@ -94,9 +95,7 @@ int main(int argc, char *argv[]) {
     }
 }
 
-/** Argument reading and processing **/
-
-struct vector* read_data_points(){
+struct vector* read_data_points(void) {
 
     struct vector *head_vec, *curr_vec;
     struct entry *head_entry, *curr_entry;
@@ -116,6 +115,7 @@ struct vector* read_data_points(){
         printf("Failed to allocate memory\n");
         exit(1);
     }
+
     curr_vec->next = NULL;
     head_vec = curr_vec;
 
@@ -131,13 +131,16 @@ struct vector* read_data_points(){
                 printf("Failed to allocate memory\n");
                 exit(1);
             }
+
             curr_vec = curr_vec->next;
             curr_vec->next = NULL;
+
             head_entry = malloc(sizeof(struct entry));
             if (head_entry == NULL) {   /* Memory allocation failed */
                 printf("Failed to allocate memory\n");
                 exit(1);
             }
+
             curr_entry = head_entry;
             curr_entry->next = NULL;
 
@@ -171,10 +174,12 @@ void print_vectors(struct vector *vectors) {
 
     while (curr_vec != NULL) {
         struct entry* entry = curr_vec->entries;
+
         while (entry != NULL) {
             printf("%.4f ", entry->value);
             entry = entry->next;
         }
+
         printf("\n");
         fflush(stdout); 
         curr_vec = curr_vec->next;
@@ -184,15 +189,20 @@ void print_vectors(struct vector *vectors) {
 void print_centroids(struct vector *centroids) {
     struct entry* entry;
     int i = 0;
+
     for (; i < K; i++) {
         entry = centroids[i].entries;
+
         while (entry != NULL) {
+
             if (entry->next == NULL)
                 printf("%.4f", entry->value);
             else
                 printf("%.4f,", entry->value);
             entry = entry->next;
+
         }
+
         printf("\n");
         fflush(stdout); 
     }
@@ -226,9 +236,8 @@ int is_number(char number[]) {
 
     for (; number[i] != 0; i++) {
         /* If (number[i] > '9' || number[i] < '0') */
-        if (!isdigit(number[i])) {
+        if (!isdigit(number[i]))
             return 0;
-        }
     }
     return 1;
 }
@@ -303,11 +312,14 @@ struct entry* copy_entries(struct entry* original_entries) {
     struct entry *new_entry;
 
     while (current != NULL) {
+
         new_entry = malloc(sizeof(struct entry));
+
         if (new_entry == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
             exit(1);
         }
+
         new_entry->value = current->value;
         new_entry->next = NULL;
 
@@ -347,11 +359,14 @@ struct vector** assign_data_points_to_clusters(struct vector *data_points, struc
 
     i = 0;
     for (; i < N; i++) {
+
         data_point = malloc(sizeof(struct vector));
+
         if (data_point == NULL) {   /* Memory allocation failed */
             printf("Failed to allocate memory\n");
             exit(1);
         }
+
         data_point->entries = copy_entries(curr_data_point->entries);
         data_point->next = NULL;
                 
@@ -453,7 +468,7 @@ struct entry* sum_entries(struct entry *u, struct entry *v) {
     return new_entries;
 }
 
-struct vector* zero_vector(){
+struct vector* zero_vector(void) {
     struct vector *v = calloc(1, sizeof(struct vector));
     struct entry* zero_entries = NULL;
     struct entry* prev = NULL;
@@ -579,7 +594,7 @@ double dist(struct vector u, struct vector v) {
 }
 
 void free_vectors(struct vector *head) {
-    if (head != NULL){
+    if (head != NULL) {
         free_entries(head->entries);
         free_vectors(head->next);
         free(head);
